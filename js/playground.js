@@ -3,8 +3,6 @@
    the case modal opens with a [data-ot-lab] block inside it. */
 (() => {
     'use strict';
-    const RATE = 450; // demo hourly rate, INR
-    const inr = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
     const pad = (n) => String(n).padStart(2, '0');
     const clock = (m) => `${pad(Math.floor(((m % 1440) + 1440) % 1440 / 60))}:${pad(m % 60)}`;
     const dur = (m) => {
@@ -22,7 +20,7 @@
             planned: q('select[name="planned"]'), inp: q('input[name="in"]'), out: q('input[name="out"]'),
         };
         const outs = {
-            in: q('[data-out="in"]'), out: q('[data-out="out"]'), amount: q('[data-out="amount"]'), calc: q('[data-out="calc"]'),
+            in: q('[data-out="in"]'), out: q('[data-out="out"]'), hours: q('[data-out="hours"]'), calc: q('[data-out="calc"]'),
         };
         const stage = {};
         lab.querySelectorAll('.ot-pipe li').forEach((li, i) => {
@@ -84,10 +82,10 @@
                 set('planned', raw ? 'on' : 'skip', dur(raw), `≤ approved ${dur(cap)}`);
             }
 
-            const amount = (final / 60) * RATE * mult;
+            // the engine hands payroll classified hours; payroll applies the wage and prices them
             result.classList.toggle('zero', !final);
-            outs.amount.textContent = `₹${inr.format(amount)}`;
-            outs.calc.textContent = final ? `${dur(final)} × ₹${RATE}/h × ${mult}` : 'no overtime · nothing sent to payroll';
+            outs.hours.textContent = final ? `${dur(final)} @ ${mult}×` : '0h';
+            outs.calc.textContent = final ? `payroll applies the wage · ${dayLabel}` : 'no overtime · nothing sent to payroll';
         };
 
         Object.values(ctl).forEach((el) => el.addEventListener('input', run));

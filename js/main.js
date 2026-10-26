@@ -124,15 +124,41 @@
     const modal = $('#case-modal');
     const services = $('#services');
     const more = $('.more-projects');
-    const openCase = (id) => {
+    const openCase = (id, tab = 'case') => {
         const tpl = $(`#case-${id}`);
         const card = $(`.card[data-case="${id}"]`);
         if (!tpl || !modal?.showModal) return;
-        $('.case-content', modal).replaceChildren(tpl.content.cloneNode(true));
+        const content = $('.case-content', modal);
+        content.classList.remove('show-adr');
+        content.replaceChildren(tpl.content.cloneNode(true));
         const media = $('.card-media', card);
         $('.case-media', modal).replaceChildren(media ? media.cloneNode(true) : '');
+        // case study / decisions (ADR) tabs, only when the template carries decision records
+        const adrs = $$('.adr-item', content);
+        if (adrs.length && $('.case-grid', content)) {
+            const bar = document.createElement('div');
+            bar.className = 'case-tabs';
+            bar.setAttribute('role', 'tablist');
+            bar.innerHTML = `<button class="case-tab" type="button" role="tab" data-tab="case" aria-selected="true"><i class="fas fa-file-lines"></i> case study</button>`
+                + `<button class="case-tab" type="button" role="tab" data-tab="adr" aria-selected="false"><i class="fas fa-code-branch"></i> decisions <b>${adrs.length}</b></button>`;
+            $('.case-grid', content).before(bar);
+            const tabs = $$('.case-tab', bar);
+            const select = (name) => {
+                content.classList.toggle('show-adr', name === 'adr');
+                tabs.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+            };
+            bar.addEventListener('click', (e) => { const b = e.target.closest('.case-tab'); if (b) select(b.dataset.tab); });
+            bar.addEventListener('keydown', (e) => {
+                if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+                const i = tabs.findIndex((b) => b.getAttribute('aria-selected') === 'true');
+                const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+                next.focus(); select(next.dataset.tab);
+            });
+            if (tab === 'adr') select('adr');
+        }
         modal.dispatchEvent(new CustomEvent('case:open', { detail: { id } }));
         modal.showModal();
+        modal.scrollTop = 0;
         $('.modal-close', modal).focus();
     };
     window.openCase = openCase;

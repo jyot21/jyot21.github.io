@@ -437,11 +437,11 @@ spring.threads.virtual.enabled=<span class="k">true</span>
 <pre><span class="c">pipeline:</span> pre-shift → post-shift → normal
           → differential → planned
 eval(emp=48213) = <span class="ok">2h15m OT</span> · <span class="s">1.5x</span>
-<span class="k">→</span> payroll.process(amount) <span class="ok">✔</span></pre>
+<span class="k">→</span> payroll.process(hours) <span class="ok">✔</span></pre>
                     </div>
                     <div class="card-body">
                         <div class="text"><i class="fas fa-clock"></i> Overtime engine → payroll</div>
-                        <p>Pipeline-pattern engine that computes pre-shift, post-shift and normal overtime, applies differential pay and planned overtime, and hands the amounts to payroll for processing.</p>
+                        <p>Pipeline-pattern engine that computes pre-shift, post-shift and normal overtime, applies differential pay and planned overtime, and hands the classified hours to payroll, which prices them.</p>
                         <div class="tags"><span>Java</span><span>Pipeline pattern</span><span>Spring Boot</span><span>Payroll</span></div>
                     </div>
                     <div class="card-metrics"><span>stages <b>5</b></span><span>feeds <b>payroll</b></span><span class="open">open case <i class="fas fa-arrow-right"></i></span></div>
@@ -516,6 +516,24 @@ match: 3 drivers · either direction
                     <p>5–6M attendance records a day computed with sub-second freshness instead of hourly delays, for 700+ enterprise clients and 500K+ users.</p>
                 </div>
             </div>
+            <div class="adr" data-adr>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-01</span><h4>Recompute on events instead of on a timer</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>Attendance ran as hourly batch jobs. Any punch, shift change or regularisation waited for the next run, so managers saw stale numbers and support absorbed the gap across 700+ clients.</dd>
+                        <dt>Decision</dt><dd>Every attendance-relevant change is published to Kafka and a consumer recomputes the affected employee-day as events arrive. The batch stays only as a nightly safety net.</dd>
+                        <dt>Consequences</dt><dd>Sub-second freshness at 5–6M records a day. In exchange, the pipeline has to cope with out-of-order and late events, and there are more moving parts to operate than a cron job.</dd>
+                    </dl>
+                </article>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-02</span><h4>Recompute the whole day, not patch the delta</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>Corrections arrive late and in any order: a regularisation can land days after the punches it affects. Applying deltas would need every event type to know how to undo every other.</dd>
+                        <dt>Decision</dt><dd>Any event for an (employee, day) pair triggers a full recompute of that day from its source records. The computation is idempotent, so replaying events is safe.</dd>
+                        <dt>Consequences</dt><dd>Simple to reason about and trivially replayable, at the cost of more work per event. Indexing, partition pruning and query rewrites paid that back with 40% lower average query time.</dd>
+                    </dl>
+                </article>
+            </div>
             <div class="tags"><span>Kafka</span><span>Spring Boot</span><span>PostgreSQL</span><span>Redis</span></div>
         </template>
 
@@ -540,6 +558,24 @@ match: 3 drivers · either direction
                     <h4><i class="fas fa-bolt"></i> Outcome</h4>
                     <p>Zero downtime, 100% consistency, 50M+ records moved. The modules I own now ship on their own schedule.</p>
                 </div>
+            </div>
+            <div class="adr" data-adr>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-01</span><h4>Change data capture over dual writes</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>The monolith and the new services had to hold the same 50M+ records while customers kept running payroll. Writing to both from application code would put the consistency guarantee in every code path.</dd>
+                        <dt>Decision</dt><dd>Backfill once, then tail the monolith's database with Maxwell CDC into Kafka so the new services stay in step. Reads cut over first, writes last, with a verification job comparing both sides before each step.</dd>
+                        <dt>Consequences</dt><dd>Zero downtime and 100% verified consistency. Replication lag became a metric to watch, and rollback at any step was simply pointing reads back at the monolith.</dd>
+                    </dl>
+                </article>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-02</span><h4>Strangle by module, Attendance &amp; Leave first</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>A big-bang rewrite of a 430K-user monolith was not an option; neither was a maintenance window.</dd>
+                        <dt>Decision</dt><dd>Carve out the modules with the clearest ownership and data boundary first, route their traffic through the new services, and leave the rest of the monolith untouched until each slice proved itself.</dd>
+                        <dt>Consequences</dt><dd>The modules I own now ship on their own schedule. The seam between old and new had to be maintained for the duration, which is the price of never stopping.</dd>
+                    </dl>
+                </article>
             </div>
             <div class="tags"><span>Spring Boot</span><span>PostgreSQL</span><span>Maxwell CDC</span><span>Kafka</span></div>
         </template>
@@ -566,6 +602,32 @@ match: 3 drivers · either direction
                     <p>30,000+ emails an hour at 99.99% uptime, and a single channel-agnostic API for every team.</p>
                 </div>
             </div>
+            <div class="adr" data-adr>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-01</span><h4>A topic between producers and delivery</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>Every feature called email and push providers directly. Provider outages, retries and rate limits leaked into product code, and nobody could answer "what did we send this user?"</dd>
+                        <dt>Decision</dt><dd>Features publish a notification event to Kafka and stop there. One platform owns channels, retries and delivery records behind a single channel-agnostic API.</dd>
+                        <dt>Consequences</dt><dd>Producers are decoupled from provider failures and the platform can be scaled and retried independently. Delivery became asynchronous by design, so anything that needs a synchronous guarantee has to say so.</dd>
+                    </dl>
+                </article>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-02</span><h4>Separate lanes for immediate and scheduled traffic</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>OTPs and password resets were queued behind bulk campaigns. A priority field on one queue still leaves them sharing the same consumers and the same backlog.</dd>
+                        <dt>Decision</dt><dd>The orchestrator routes by priority into distinct lanes: immediate delivery for OTP-class messages, scheduled delivery for everything else, each with its own consumers.</dd>
+                        <dt>Consequences</dt><dd>Bulk traffic can never delay an OTP. Two paths to operate instead of one, and a rule for what counts as immediate that has to be defended against feature teams.</dd>
+                    </dl>
+                </article>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-03</span><h4>Render templates asynchronously with a Redis cache</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>Rendering 30K+ emails an hour from Velocity templates inside the request path was the throughput ceiling.</dd>
+                        <dt>Decision</dt><dd>Generate emails asynchronously from the queue, with compiled templates and shared fragments cached in Redis.</dd>
+                        <dt>Consequences</dt><dd>30,000+ emails an hour at 99.99% uptime. Template changes need a cache invalidation step, which is now part of the release checklist.</dd>
+                    </dl>
+                </article>
+            </div>
             <div class="tags"><span>Kafka</span><span>Redis</span><span>Apache Velocity</span><span>Spring Boot</span></div>
         </template>
 
@@ -591,6 +653,32 @@ match: 3 drivers · either direction
                     <p>Every service on a supported LTS with Virtual Threads on, and reproducible environments from a developer laptop to production.</p>
                 </div>
             </div>
+            <div class="adr" data-adr>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-01</span><h4>One hop from 17 to 25, not two</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>102 services across several teams. Going 17 → 21 → 25 would mean two compatibility audits, two rollouts and two rounds of coordination.</dd>
+                        <dt>Decision</dt><dd>Move straight to Java 25 (LTS) with a single compatibility audit of dependencies, build images and JVM flags, rolled out service by service behind the same pipeline.</dd>
+                        <dt>Consequences</dt><dd>Half the coordination cost and every service on a supported LTS at the same time. A bigger jump per service, mitigated by the audit and by rolling out the lowest-risk services first.</dd>
+                    </dl>
+                </article>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-02</span><h4>Virtual Threads fleet-wide, not per service</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>Thread-per-request capped concurrency on I/O-heavy services. Java 25 removes the synchronized pinning problem (JEP 491), which had been the main reason to hold back.</dd>
+                        <dt>Decision</dt><dd>Enable Virtual Threads as the default across all services rather than opting in one at a time, with pooled resources (DB connections, HTTP clients) re-sized to match.</dd>
+                        <dt>Consequences</dt><dd>Concurrency headroom without rewriting code to be reactive. Connection pools, not threads, became the resource to watch.</dd>
+                    </dl>
+                </article>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-03</span><h4>Container images instead of JARs on hosts</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>JAR deployments depended on whatever JDK and OS packages each host happened to have, so dev, staging and production drifted apart.</dd>
+                        <dt>Decision</dt><dd>Every service builds a Docker image with its runtime pinned, produced by the same Jenkins pipeline for every environment.</dd>
+                        <dt>Consequences</dt><dd>Reproducible environments from laptop to production and a single artefact to promote. Image size and build time joined the list of things to keep an eye on.</dd>
+                    </dl>
+                </article>
+            </div>
             <div class="tags"><span>Java 25</span><span>Virtual Threads</span><span>Docker</span><span>Jenkins</span></div>
         </template>
 
@@ -614,6 +702,16 @@ match: 3 drivers · either direction
                     <h4><i class="fas fa-bolt"></i> Outcome</h4>
                     <p>Transactional consistency across payroll, leave and attendance with no duplicate processing.</p>
                 </div>
+            </div>
+            <div class="adr" data-adr>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-01</span><h4>A lock plus events, not a distributed transaction</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>A transfer touches payroll, leave and attendance, each its own service with its own database. Two-phase commit across them was neither available nor something we wanted to operate.</dd>
+                        <dt>Decision</dt><dd>Take a Redis lock on the employee for the duration of the transfer so only one flow can act on them, commit the transfer in its owning service, then publish an event that the other services consume idempotently.</dd>
+                        <dt>Consequences</dt><dd>No partial transfers and no double processing, without a cross-service transaction. The lock's TTL and what happens if it expires mid-flow became explicit design points rather than accidents.</dd>
+                    </dl>
+                </article>
             </div>
             <div class="tags"><span>Redis</span><span>Kafka</span><span>Spring Boot</span></div>
         </template>
@@ -640,6 +738,16 @@ match: 3 drivers · either direction
                     <p>Work in progress. A public version is on the way; code link coming here.</p>
                 </div>
             </div>
+            <div class="adr" data-adr>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-01</span><h4>Named read-only tools, not free-form SQL</h4><span class="adr-status proposed">proposed</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>Letting an agent run arbitrary queries against production is the fastest way to get an answer and the fastest way to leak a table.</dd>
+                        <dt>Decision</dt><dd>Expose a small set of named tools with fixed queries and typed parameters, backed by read-only roles, row limits and an audit log of every call.</dd>
+                        <dt>Consequences</dt><dd>What an agent can see is reviewable and bounded. New questions need a new tool, which is slower than SQL on purpose.</dd>
+                    </dl>
+                </article>
+            </div>
             <div class="tags"><span>MCP</span><span>Claude Code</span><span>Codex</span><span>Python</span></div>
             <div class="case-links"><a class="btn" href="https://github.com/jyot21" target="_blank" rel="noopener"><i class="fab fa-github"></i> GitHub</a></div>
         </template>
@@ -664,6 +772,24 @@ match: 3 drivers · either direction
                     <p>5M+ records a day with zero data duplication, and a new client integration is configuration rather than code.</p>
                 </div>
             </div>
+            <div class="adr" data-adr>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-01</span><h4>One configurable framework, not one integration per client</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>Each enterprise client's MySQL or MSSQL integration was hand-built, so each had its own failure modes, its own duplicates and its own on-call surprises.</dd>
+                        <dt>Decision</dt><dd>A single framework that takes a connection, a mapping and a schedule as configuration, with TLS, retries and idempotency built in once.</dd>
+                        <dt>Consequences</dt><dd>A new client is configuration rather than code. The framework has to be general enough for both engines, which cost some per-client optimisations.</dd>
+                    </dl>
+                </article>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-02</span><h4>Idempotent upserts over exactly-once delivery</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>Client databases, networks and schedules fail in the middle of runs. Trying to guarantee each record is processed exactly once across those boundaries is fragile.</dd>
+                        <dt>Decision</dt><dd>Process at least once and make every write an idempotent upsert on the record's natural key, so retries and re-runs are always safe.</dd>
+                        <dt>Consequences</dt><dd>5M+ records a day with zero duplication and a one-line recovery for any failed run: run it again. Every source needs a stable key, which becomes an onboarding requirement.</dd>
+                    </dl>
+                </article>
+            </div>
             <div class="tags"><span>Java</span><span>MySQL</span><span>MSSQL</span><span>TLS</span></div>
         </template>
 
@@ -673,7 +799,7 @@ match: 3 drivers · either direction
             <div class="case-grid">
                 <div class="case-block">
                     <h4><i class="fas fa-bug"></i> Problem</h4>
-                    <p>Overtime isn't one number. Hours before a shift, after it and on a normal day are counted differently; some attract differential pay; some are planned and approved in advance. Each client has its own rules, and at the end the amount has to reach payroll correctly.</p>
+                    <p>Overtime isn't one number. Hours before a shift, after it and on a normal day are counted differently; some attract differential pay; some are planned and approved in advance. Each client has its own rules, and at the end the right hours, by type, have to reach payroll.</p>
                 </div>
                 <div class="case-block">
                     <h4><i class="fas fa-hammer"></i> What I built</h4>
@@ -681,13 +807,31 @@ match: 3 drivers · either direction
                         <li>An engine on the Pipeline design pattern: pre-shift OT, post-shift OT and normal OT are computed as separate stages against the employee's shift.</li>
                         <li>A differential-pay stage applies the rate rules on top, and a planned-overtime stage handles overtime approved in advance.</li>
                         <li>Each stage evaluates the client's configured rules dynamically, so a new policy is configuration, not a code change.</li>
-                        <li>Integrated the computed amounts with the payroll system so overtime flows straight into pay processing.</li>
+                        <li>Integrated the computed hours with the payroll system, which applies the employee's wage and processes the pay.</li>
                     </ul>
                 </div>
                 <div class="case-block">
                     <h4><i class="fas fa-bolt"></i> Outcome</h4>
-                    <p>Five overtime models from one engine, configured per client, with the amounts reaching payroll automatically instead of being reconciled by hand.</p>
+                    <p>Five overtime models from one engine, configured per client, with the hours reaching payroll automatically instead of being reconciled by hand.</p>
                 </div>
+            </div>
+            <div class="adr" data-adr>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-01</span><h4>Pipeline pattern over a rules engine</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>Five overtime models, per-client rules, and an order that matters: compute the hours first, then differential pay, then the planned-overtime cap. A rules engine would hide that ordering inside rule priorities.</dd>
+                        <dt>Decision</dt><dd>An explicit pipeline of stages (pre-shift, post-shift, normal, differential, planned) sharing one context object. Each stage reads the client's configuration and may no-op.</dd>
+                        <dt>Consequences</dt><dd>A new policy is configuration, not code; each stage is unit-testable on its own; the order is visible in one place. Cross-stage rules have to be expressed through the shared context, which takes discipline.</dd>
+                    </dl>
+                </article>
+                <article class="adr-item">
+                    <header><span class="adr-id">ADR-02</span><h4>Attendance owns the hours, payroll owns the money</h4><span class="adr-status">accepted</span></header>
+                    <dl>
+                        <dt>Context</dt><dd>Overtime sits on the boundary between two systems. Attendance knows shifts, punches and policies; payroll knows wages, pay components and statutory rules. Either side could have done the whole calculation.</dd>
+                        <dt>Decision</dt><dd>The engine classifies and totals the hours (pre-shift, post-shift, normal, differential class, planned cap) and hands those hours to payroll. Payroll applies the employee's wage and rates and calculates the pay itself.</dd>
+                        <dt>Consequences</dt><dd>Each system stays the source of truth for what it understands, and a wage or rate change never touches attendance code. The hand-off contract (hour types and their meaning) has to be versioned carefully.</dd>
+                    </dl>
+                </article>
             </div>
             <div class="ot-lab" data-ot-lab>
                 <div class="ot-bar"><span class="svc"><i class="fas fa-flask"></i> lab/overtime-engine · drag the punches, watch the stages run</span><span class="ot-note">simplified model · the real rules come from per-client config</span></div>
@@ -731,7 +875,7 @@ match: 3 drivers · either direction
                     <li data-stage="diff"><span class="st-name">differential</span><b class="st-val">–</b><span class="st-note"></span></li>
                     <li data-stage="planned"><span class="st-name">planned OT</span><b class="st-val">–</b><span class="st-note"></span></li>
                 </ol>
-                <p class="ot-result" aria-live="polite"><span class="k">→</span> <span>payroll.process(<b data-out="amount">–</b>)</span> <span class="ok">✔</span><span class="ot-calc" data-out="calc"></span></p>
+                <p class="ot-result" aria-live="polite"><span class="k">→</span> <span>payroll.process(<b data-out="hours">–</b>)</span> <span class="ok">✔</span><span class="ot-calc" data-out="calc"></span></p>
             </div>
             <div class="tags"><span>Java</span><span>Pipeline pattern</span><span>Spring Boot</span><span>Payroll integration</span></div>
         </template>
