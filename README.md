@@ -40,6 +40,7 @@ Search the files for these and fix each one:
 - `TODO` comments in `index.html` — places where only you know the detail: migration strategy, attendance partitioning and late-event handling, lock expiry strategy, MCP guardrails, the story chapters, and the "Present" end date on the Senior role.
 - The contact form posts to **formsubmit.co** using `jyotmmaheshwari@gmail.com`. The first submission triggers a one-time activation email to that address; click the link in it, after which messages arrive normally. The optional attachment field (pdf, doc, txt, md, png, jpg; 10 MB cap enforced client-side) arrives as an email attachment.
 - `resume/Jyot_Maheshwari_Resume.pdf` — replace when the resume changes, and update the "Last updated" text in the About section.
+- `assets/images/og.png` is the 1200×630 preview shown when the link is shared on LinkedIn, WhatsApp or X. Its source is `assets/images/og-source.html`; after editing it, re-render with `msedge --headless=new --window-size=1200,630 --screenshot=og.png file:///D:/portfolio/assets/images/og-source.html`. Shared links are cached by each platform, so use LinkedIn's Post Inspector (linkedin.com/post-inspector) to refresh the preview after a change.
 
 ## Updating content
 
