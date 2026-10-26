@@ -437,11 +437,11 @@ spring.threads.virtual.enabled=<span class="k">true</span>
 <pre><span class="c">pipeline:</span> pre-shift → post-shift → normal
           → differential → planned
 eval(emp=48213) = <span class="ok">2h15m OT</span> · <span class="s">1.5x</span>
-<span class="k">→</span> payroll.process(amount) <span class="ok">✔</span></pre>
+<span class="k">→</span> payroll.process(hours) <span class="ok">✔</span></pre>
                     </div>
                     <div class="card-body">
                         <div class="text"><i class="fas fa-clock"></i> Overtime engine → payroll</div>
-                        <p>Pipeline-pattern engine that computes pre-shift, post-shift and normal overtime, applies differential pay and planned overtime, and hands the amounts to payroll for processing.</p>
+                        <p>Pipeline-pattern engine that computes pre-shift, post-shift and normal overtime, applies differential pay and planned overtime, and hands the classified hours to payroll, which prices them.</p>
                         <div class="tags"><span>Java</span><span>Pipeline pattern</span><span>Spring Boot</span><span>Payroll</span></div>
                     </div>
                     <div class="card-metrics"><span>stages <b>5</b></span><span>feeds <b>payroll</b></span><span class="open">open case <i class="fas fa-arrow-right"></i></span></div>
@@ -799,7 +799,7 @@ match: 3 drivers · either direction
             <div class="case-grid">
                 <div class="case-block">
                     <h4><i class="fas fa-bug"></i> Problem</h4>
-                    <p>Overtime isn't one number. Hours before a shift, after it and on a normal day are counted differently; some attract differential pay; some are planned and approved in advance. Each client has its own rules, and at the end the amount has to reach payroll correctly.</p>
+                    <p>Overtime isn't one number. Hours before a shift, after it and on a normal day are counted differently; some attract differential pay; some are planned and approved in advance. Each client has its own rules, and at the end the right hours, by type, have to reach payroll.</p>
                 </div>
                 <div class="case-block">
                     <h4><i class="fas fa-hammer"></i> What I built</h4>
@@ -807,12 +807,12 @@ match: 3 drivers · either direction
                         <li>An engine on the Pipeline design pattern: pre-shift OT, post-shift OT and normal OT are computed as separate stages against the employee's shift.</li>
                         <li>A differential-pay stage applies the rate rules on top, and a planned-overtime stage handles overtime approved in advance.</li>
                         <li>Each stage evaluates the client's configured rules dynamically, so a new policy is configuration, not a code change.</li>
-                        <li>Integrated the computed amounts with the payroll system so overtime flows straight into pay processing.</li>
+                        <li>Integrated the computed hours with the payroll system, which applies the employee's wage and processes the pay.</li>
                     </ul>
                 </div>
                 <div class="case-block">
                     <h4><i class="fas fa-bolt"></i> Outcome</h4>
-                    <p>Five overtime models from one engine, configured per client, with the amounts reaching payroll automatically instead of being reconciled by hand.</p>
+                    <p>Five overtime models from one engine, configured per client, with the hours reaching payroll automatically instead of being reconciled by hand.</p>
                 </div>
             </div>
             <div class="adr" data-adr>
@@ -825,11 +825,11 @@ match: 3 drivers · either direction
                     </dl>
                 </article>
                 <article class="adr-item">
-                    <header><span class="adr-id">ADR-02</span><h4>Attendance owns the overtime math, payroll consumes amounts</h4><span class="adr-status">accepted</span></header>
+                    <header><span class="adr-id">ADR-02</span><h4>Attendance owns the hours, payroll owns the money</h4><span class="adr-status">accepted</span></header>
                     <dl>
-                        <dt>Context</dt><dd>Payroll could have recomputed overtime from raw punches, but then two systems would disagree about the same hours.</dd>
-                        <dt>Decision</dt><dd>The engine is the single source of truth for overtime; it hands payroll finished amounts over an integration contract, and payroll only processes them.</dd>
-                        <dt>Consequences</dt><dd>One place to fix when a client's policy changes and no reconciliation by hand. The contract between the two systems has to be versioned carefully.</dd>
+                        <dt>Context</dt><dd>Overtime sits on the boundary between two systems. Attendance knows shifts, punches and policies; payroll knows wages, pay components and statutory rules. Either side could have done the whole calculation.</dd>
+                        <dt>Decision</dt><dd>The engine classifies and totals the hours (pre-shift, post-shift, normal, differential class, planned cap) and hands those hours to payroll. Payroll applies the employee's wage and rates and calculates the pay itself.</dd>
+                        <dt>Consequences</dt><dd>Each system stays the source of truth for what it understands, and a wage or rate change never touches attendance code. The hand-off contract (hour types and their meaning) has to be versioned carefully.</dd>
                     </dl>
                 </article>
             </div>
@@ -875,7 +875,7 @@ match: 3 drivers · either direction
                     <li data-stage="diff"><span class="st-name">differential</span><b class="st-val">–</b><span class="st-note"></span></li>
                     <li data-stage="planned"><span class="st-name">planned OT</span><b class="st-val">–</b><span class="st-note"></span></li>
                 </ol>
-                <p class="ot-result" aria-live="polite"><span class="k">→</span> <span>payroll.process(<b data-out="amount">–</b>)</span> <span class="ok">✔</span><span class="ot-calc" data-out="calc"></span></p>
+                <p class="ot-result" aria-live="polite"><span class="k">→</span> <span>payroll.process(<b data-out="hours">–</b>)</span> <span class="ok">✔</span><span class="ot-calc" data-out="calc"></span></p>
             </div>
             <div class="tags"><span>Java</span><span>Pipeline pattern</span><span>Spring Boot</span><span>Payroll integration</span></div>
         </template>

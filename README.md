@@ -49,6 +49,6 @@ Search the files for these and fix each one:
 - **Decision records**: inside a case template, a `div.adr` holding `article.adr-item` blocks (ADR id, title, status, Context / Decision / Consequences). When present, the modal grows a "case study | decisions" tab bar; `adr` in the terminal lists them and `adr <case>` opens that tab.
 - **Skills wiring**: the `WIRES` map at the top of the skill section in `js/main.js` says which chips light up together and what caption to show.
 - **Terminal**: commands live in the `commands` object in `js/terminal.js`.
-- **Overtime playground**: the interactive block inside `<template id="case-overtime">` is driven by `js/playground.js` (demo rate, grace minutes and stage rules are at the top of `run()`). It boots on the `case:open` event the modal fires.
+- **Overtime playground**: the interactive block inside `<template id="case-overtime">` is driven by `js/playground.js` (grace minutes and stage rules are at the top of `run()`; it outputs hours, since payroll prices them). It boots on the `case:open` event the modal fires.
 - **Chaos mode**: the "kill a broker" button (and clicking a partition label, or `chaos` in the terminal) calls `killBroker()` in the hero section of `js/main.js`. Six partitions sit on three brokers (`lane % 3`); timings and log wording are in that function.
 - **Story**: each `section.scene` in `index.html` is one chapter; `--d` on a child sets its reveal delay.
