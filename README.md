@@ -47,4 +47,5 @@ Search the files for these and fix each one:
 - **Case studies**: each is an `article.card[data-case="id"]` for the grid plus a `<template id="case-id">` for the modal. Add both to add one.
 - **Skills wiring**: the `WIRES` map at the top of the skill section in `js/main.js` says which chips light up together and what caption to show.
 - **Terminal**: commands live in the `commands` object in `js/terminal.js`.
+- **Chaos mode**: the "kill a broker" button (and clicking a partition label, or `chaos` in the terminal) calls `killBroker()` in the hero section of `js/main.js`. Six partitions sit on three brokers (`lane % 3`); timings and log wording are in that function.
 - **Story**: each `section.scene` in `index.html` is one chapter; `--d` on a child sets its reveal delay.

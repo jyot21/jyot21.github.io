@@ -94,7 +94,11 @@
                 </div>
             </div>
         </div>
-        <p class="stream-hint" aria-hidden="true"><i></i>move across the stream to publish events</p>
+        <div class="stream-tools">
+            <p class="stream-hint" aria-hidden="true"><i></i>move across the stream to publish events</p>
+            <button class="chaos-btn" type="button" title="Take one broker down and watch leader election move its partitions"><i class="fas fa-skull-crossbones" aria-hidden="true"></i> <span>kill a broker</span></button>
+        </div>
+        <ol class="chaos-log" id="chaos-log" aria-live="polite" aria-label="Cluster events"></ol>
         <a href="#about" class="scroll-down" aria-label="Scroll to about"><span>scroll</span><i></i></a>
     </section>
 

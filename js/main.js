@@ -307,19 +307,82 @@
             lane, x, v: 40 + Math.random() * 60 + boost, r: 2.5 + Math.random() * 2,
             c: Math.random() < .25 ? cyan : amber, a: 0,
         });
+
+        /* chaos mode: kill a broker, watch leader election move its partitions */
+        const BROKERS = 3;
+        const red = [248, 113, 113], green = [52, 211, 153];
+        const lanes = Array.from({ length: LANES }, (_, i) => ({ home: i % BROKERS, leader: i % BROKERS, state: 'ok', until: 0 }));
+        let downBroker = -1;
+        const chaosLog = $('#chaos-log');
+        const chaosBtn = $('.chaos-btn');
+        const logLine = (cls, text) => {
+            if (!chaosLog) return;
+            const li = document.createElement('li');
+            li.className = cls;
+            li.textContent = text;
+            chaosLog.append(li);
+            while (chaosLog.children.length > 3) chaosLog.firstChild.remove();
+            setTimeout(() => li.classList.add('fade'), 7000);
+            setTimeout(() => li.remove(), 7600);
+        };
+        const list = (ids) => ids.map((i) => `partition-${i}`).join(', ');
+        const killBroker = (which) => {
+            if (reduced || downBroker >= 0) return false;
+            const b = Number.isInteger(which) ? ((which % BROKERS) + BROKERS) % BROKERS : Math.floor(Math.random() * BROKERS);
+            const affected = lanes.map((l, i) => (l.leader === b ? i : -1)).filter((i) => i >= 0);
+            if (!affected.length) return false;
+            downBroker = b;
+            const t0 = performance.now();
+            const electMs = 900 + Math.random() * 600;
+            affected.forEach((i) => { lanes[i].state = 'down'; lanes[i].until = t0 + electMs; });
+            chaosBtn?.classList.add('busy');
+            if (chaosBtn) chaosBtn.disabled = true;
+            logLine('warn', `WARN  broker-${b} unreachable · ${list(affected)} leaderless · producers retrying`);
+            setTimeout(() => {
+                const moved = affected.map((i, k) => {
+                    const l = lanes[i];
+                    l.leader = (b + 1 + k) % BROKERS;
+                    l.state = 'moved';
+                    l.until = performance.now() + 2600;
+                    return `${i}→b${l.leader}`;
+                });
+                packets.forEach((p) => { if (affected.includes(p.lane)) p.v += 140; });
+                logLine('ok', `INFO  leader election done in ${Math.round(performance.now() - t0)}ms · ${moved.join(' ')} · 0 records lost (acks=all, RF=3)`);
+            }, electMs);
+            setTimeout(() => {
+                affected.forEach((i) => { lanes[i].leader = lanes[i].home; lanes[i].state = 'ok'; });
+                downBroker = -1;
+                chaosBtn?.classList.remove('busy');
+                if (chaosBtn) chaosBtn.disabled = false;
+                logLine('info', `INFO  broker-${b} rejoined · replicas in sync · preferred leaders restored for ${list(affected)}`);
+            }, electMs + 6000);
+            return true;
+        };
+        window.killBroker = killBroker;
+        chaosBtn?.addEventListener('click', () => killBroker());
         const draw = (t) => {
             const dt = Math.min(.05, (t - last) / 1000 || 0); last = t;
             ctx.clearRect(0, 0, W, H);
             ctx.lineWidth = 1;
             const labels = W >= 760;
+            ctx.font = '11px JetBrains Mono, monospace';
             lanesY.forEach((y, i) => {
-                ctx.strokeStyle = 'rgba(31,42,61,.9)';
+                const l = lanes[i];
+                if (l.state !== 'ok' && t > l.until && l.state === 'moved') l.state = 'ok';
+                let label = `partition-${i}`, color = 'rgba(91,103,121,.7)', stroke = 'rgba(31,42,61,.9)', dash = [];
+                if (l.state === 'down') { label += ' · leader? electing'; color = rgba(red, .85); stroke = rgba(red, .45); dash = [3, 5]; }
+                else if (l.state === 'moved') { label += ` · leader → broker-${l.leader}`; color = rgba(green, .9); stroke = rgba(green, .35); }
+                else if (l.leader !== l.home) { label += ` · broker-${l.leader}`; }
+                ctx.strokeStyle = stroke;
+                ctx.setLineDash(dash);
                 ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+                ctx.setLineDash([]);
                 if (!labels) return;
-                ctx.fillStyle = 'rgba(91,103,121,.7)';
-                ctx.font = '11px JetBrains Mono, monospace';
-                ctx.fillText(`partition-${i}`, W - 118, y - 8);
+                ctx.fillStyle = color;
+                ctx.textAlign = 'right';
+                ctx.fillText(label, W - 52, y - 8);
             });
+            ctx.textAlign = 'left';
             ctx.strokeStyle = 'rgba(34,211,238,.35)';
             ctx.setLineDash([4, 6]);
             ctx.beginPath(); ctx.moveTo(consumer, lanesY[0] - 24); ctx.lineTo(consumer, lanesY[LANES - 1] + 24); ctx.stroke();
@@ -332,20 +395,22 @@
             if (!reduced && Math.random() < dt * 4) spawn(Math.floor(Math.random() * LANES));
             packets = packets.filter((p) => p.a < 1);
             packets.forEach((p) => {
-                if (!reduced) p.x += p.v * dt;
+                const stalled = lanes[p.lane].state === 'down';
+                if (!reduced && !stalled) p.x += p.v * dt;
                 const y = lanesY[p.lane];
+                const c = stalled ? red : p.c;
                 if (p.x >= consumer) {
                     p.a += dt * 3;
                     const g = ctx.createRadialGradient(consumer, y, 0, consumer, y, 18);
-                    g.addColorStop(0, rgba(p.c, .7 * (1 - p.a))); g.addColorStop(1, rgba(p.c, 0));
+                    g.addColorStop(0, rgba(c, .7 * (1 - p.a))); g.addColorStop(1, rgba(c, 0));
                     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(consumer, y, 18, 0, Math.PI * 2); ctx.fill();
                     return;
                 }
-                ctx.strokeStyle = rgba(p.c, .35);
+                ctx.strokeStyle = rgba(c, stalled ? .15 : .35);
                 ctx.lineWidth = 2;
                 ctx.beginPath(); ctx.moveTo(p.x - 26, y); ctx.lineTo(p.x, y); ctx.stroke();
-                ctx.fillStyle = rgba(p.c, .95);
-                ctx.shadowColor = rgba(p.c, .8); ctx.shadowBlur = 10;
+                ctx.fillStyle = rgba(c, stalled ? .6 : .95);
+                ctx.shadowColor = rgba(c, .8); ctx.shadowBlur = stalled ? 4 : 10;
                 ctx.beginPath(); ctx.arc(p.x, y, p.r, 0, Math.PI * 2); ctx.fill();
                 ctx.shadowBlur = 0;
             });
@@ -361,18 +426,37 @@
         document.addEventListener('visibilitychange', () => (document.hidden ? stop() : visible && start()));
 
         let lastPub = 0;
-        const publish = (clientX, clientY) => {
+        const local = (e) => { const r = home.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+        const nearest = (y) => {
+            let lane = 0, best = Infinity;
+            lanesY.forEach((ly, i) => { const d = Math.abs(ly - y); if (d < best) { best = d; lane = i; } });
+            return [lane, best];
+        };
+        // the partition label at the right edge of each lane is a click target for chaos mode
+        const labelHit = (x, y) => {
+            if (W < 760 || reduced) return -1;
+            const [lane] = nearest(y + 12);
+            return x > W - 270 && x < W - 40 && Math.abs(lanesY[lane] - 12 - y) < 12 ? lane : -1;
+        };
+        const publish = (x, y) => {
             const now = performance.now();
             if (now - lastPub < 60) return;
             lastPub = now;
-            const r = home.getBoundingClientRect();
-            const x = clientX - r.left, y = clientY - r.top;
-            let lane = 0, best = Infinity;
-            lanesY.forEach((ly, i) => { const d = Math.abs(ly - y); if (d < best) { best = d; lane = i; } });
+            const [lane, best] = nearest(y);
             if (best < 60) spawn(lane, x, 80);
         };
-        home.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' || e.buttons) publish(e.clientX, e.clientY); });
-        home.addEventListener('pointerdown', (e) => publish(e.clientX, e.clientY));
+        home.addEventListener('pointermove', (e) => {
+            const [x, y] = local(e);
+            home.style.cursor = labelHit(x, y) >= 0 ? 'pointer' : '';
+            if (e.pointerType === 'mouse' || e.buttons) publish(x, y);
+        });
+        home.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('a, button')) return;
+            const [x, y] = local(e);
+            const lane = labelHit(x, y);
+            if (lane >= 0) { killBroker(lanes[lane].leader); return; }
+            publish(x, y);
+        });
         if (reduced) draw(performance.now());
     }
 })();
