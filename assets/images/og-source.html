@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>og source</title>
+<!-- Source for assets/images/og.png (1200x630). Regenerate with:
+     msedge --headless=new --window-size=1200,630 --screenshot=og.png file:///D:/portfolio/assets/images/og-source.html -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0b0f17; --surface: #111827; --border: #1f2a3d; --accent: #ffb020; --signal: #22d3ee; --ok: #34d399; --text: #e6edf7; --muted: #8b9bb4; --dim: #4b5a73; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; }
+  .card { position: relative; width: 1200px; height: 630px; background: radial-gradient(900px 500px at 85% 40%, rgba(34, 211, 238, .08), transparent 60%), radial-gradient(700px 400px at 10% 90%, rgba(255, 176, 32, .07), transparent 60%), var(--bg); }
+  .grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(31, 42, 61, .35) 1px, transparent 1px), linear-gradient(90deg, rgba(31, 42, 61, .35) 1px, transparent 1px); background-size: 40px 40px; mask-image: linear-gradient(180deg, rgba(0,0,0,.6), rgba(0,0,0,.15)); }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  .brand { position: absolute; left: 72px; top: 58px; display: flex; align-items: center; gap: 14px; }
+  .brand svg { width: 44px; height: 44px; }
+  .brand span { font-size: 20px; color: var(--muted); letter-spacing: .02em; }
+  .brand span b { color: var(--text); font-weight: 600; }
+  .brand span i { color: var(--accent); font-style: normal; margin: 0 4px; }
+
+  .lanes { position: absolute; right: 0; top: 96px; width: 620px; height: 470px; mask-image: linear-gradient(90deg, transparent, #000 22%); }
+  .lane { position: absolute; left: 0; right: 0; height: 1px; background: #2a3750; }
+  .lane::before { content: attr(data-label); position: absolute; right: 24px; top: -20px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--dim); letter-spacing: .04em; }
+  .pk { position: absolute; width: 34px; height: 10px; border-radius: 3px; top: -5px; background: var(--signal); box-shadow: 0 0 14px rgba(34, 211, 238, .55); }
+  .pk.a { background: var(--accent); box-shadow: 0 0 14px rgba(255, 176, 32, .55); }
+  .pk.g { background: var(--ok); box-shadow: 0 0 14px rgba(52, 211, 153, .5); }
+  .consumer { position: absolute; right: 150px; top: 4px; bottom: 4px; width: 2px; background: linear-gradient(180deg, transparent, var(--accent) 15%, var(--accent) 85%, transparent); box-shadow: 0 0 18px rgba(255, 176, 32, .45); }
+  .consumer::after { content: 'consumer'; position: absolute; left: 10px; top: -4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); }
+
+  .copy { position: absolute; left: 72px; top: 200px; width: 720px; }
+  .tag { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--accent); letter-spacing: .06em; margin-bottom: 18px; }
+  .tag::before { content: '// '; color: var(--dim); }
+  h1 { font-size: 84px; line-height: .98; font-weight: 700; letter-spacing: -.025em; }
+  h1 small { display: block; font-size: 34px; font-weight: 500; color: var(--muted); letter-spacing: -.01em; margin-top: 14px; }
+  .stack { margin-top: 34px; display: flex; gap: 8px; flex-wrap: nowrap; }
+  .stack span { white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text); padding: 6px 11px; border: 1px solid var(--border); border-radius: 8px; background: rgba(17, 24, 39, .85); }
+  .stack span b { color: var(--signal); font-weight: 500; }
+
+  .foot { position: absolute; left: 72px; right: 72px; bottom: 50px; display: flex; align-items: center; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 17px; color: var(--muted); }
+  .foot .url { color: var(--text); }
+  .foot .url::before { content: '$ open '; color: var(--dim); }
+  .foot .up { display: flex; align-items: center; gap: 10px; color: var(--ok); }
+  .foot .up::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px var(--ok); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="grid"></div>
+
+  <div class="lanes" aria-hidden="true">
+    <div class="lane" data-label="partition-0" style="top:34px"><span class="pk" style="left:60px"></span><span class="pk a" style="left:300px"></span></div>
+    <div class="lane" data-label="partition-1" style="top:114px"><span class="pk g" style="left:170px"></span><span class="pk" style="left:380px"></span></div>
+    <div class="lane" data-label="partition-2" style="top:194px"><span class="pk a" style="left:190px"></span><span class="pk" style="left:250px"></span><span class="pk g" style="left:420px"></span></div>
+    <div class="lane" data-label="partition-3" style="top:274px"><span class="pk" style="left:220px"></span></div>
+    <div class="lane" data-label="partition-4" style="top:354px"><span class="pk g" style="left:90px"></span><span class="pk a" style="left:350px"></span></div>
+    <div class="lane" data-label="partition-5" style="top:434px"><span class="pk" style="left:150px"></span><span class="pk" style="left:410px"></span></div>
+    <div class="consumer"></div>
+  </div>
+
+  <div class="brand">
+    <svg viewBox="0 0 64 64" fill="none">
+      <rect x="2" y="2" width="60" height="60" rx="14" fill="#111827" stroke="#1f2a3d" stroke-width="2"/>
+      <path d="M14 20h36M14 32h36M14 44h36" stroke="#1f2a3d" stroke-width="2"/>
+      <rect x="18" y="17" width="9" height="6" rx="1.5" fill="#22d3ee"/>
+      <rect x="36" y="29" width="9" height="6" rx="1.5" fill="#ffb020"/>
+      <rect x="24" y="41" width="9" height="6" rx="1.5" fill="#34d399"/>
+    </svg>
+    <span><b>jyot</b><i>.</i>maheshwari</span>
+  </div>
+
+  <div class="copy">
+    <div class="tag mono">senior backend engineer</div>
+    <h1>Jyot Maheshwari<small>Java · Spring Boot · Kafka</small></h1>
+    <div class="stack">
+      <span><b>500K+</b> users</span>
+      <span><b>700+</b> enterprise clients</span>
+      <span><b>5–6M</b> events / day</span>
+      <span><b>99.99%</b> uptime</span>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span class="url">jyot21.github.io</span>
+    <span class="up">all systems operational · Bengaluru</span>
+  </div>
+</div>
+</body>
+</html>

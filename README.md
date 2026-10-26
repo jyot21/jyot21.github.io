@@ -40,6 +40,7 @@ Search the files for these and fix each one:
 - `TODO` comments in `index.html` — places where only you know the detail: migration strategy, attendance partitioning and late-event handling, lock expiry strategy, MCP guardrails, the story chapters, and the "Present" end date on the Senior role.
 - The contact form posts to **formsubmit.co** using `jyotmmaheshwari@gmail.com`. The first submission triggers a one-time activation email to that address; click the link in it, after which messages arrive normally. The optional attachment field (pdf, doc, txt, md, png, jpg; 10 MB cap enforced client-side) arrives as an email attachment.
 - `resume/Jyot_Maheshwari_Resume.pdf` — replace when the resume changes, and update the "Last updated" text in the About section.
+- `assets/images/og.png` is the 1200×630 preview shown when the link is shared on LinkedIn, WhatsApp or X. Its source is `assets/images/og-source.html`; after editing it, re-render with `msedge --headless=new --window-size=1200,630 --screenshot=og.png file:///D:/portfolio/assets/images/og-source.html`. Shared links are cached by each platform, so use LinkedIn's Post Inspector (linkedin.com/post-inspector) to refresh the preview after a change.
 
 ## Updating content
 
@@ -47,5 +48,6 @@ Search the files for these and fix each one:
 - **Case studies**: each is an `article.card[data-case="id"]` for the grid plus a `<template id="case-id">` for the modal. Add both to add one.
 - **Skills wiring**: the `WIRES` map at the top of the skill section in `js/main.js` says which chips light up together and what caption to show.
 - **Terminal**: commands live in the `commands` object in `js/terminal.js`.
+- **Overtime playground**: the interactive block inside `<template id="case-overtime">` is driven by `js/playground.js` (demo rate, grace minutes and stage rules are at the top of `run()`). It boots on the `case:open` event the modal fires.
 - **Chaos mode**: the "kill a broker" button (and clicking a partition label, or `chaos` in the terminal) calls `killBroker()` in the hero section of `js/main.js`. Six partitions sit on three brokers (`lane % 3`); timings and log wording are in that function.
 - **Story**: each `section.scene` in `index.html` is one chapter; `--d` on a child sets its reveal delay.

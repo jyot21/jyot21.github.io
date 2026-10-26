@@ -131,6 +131,7 @@
         $('.case-content', modal).replaceChildren(tpl.content.cloneNode(true));
         const media = $('.card-media', card);
         $('.case-media', modal).replaceChildren(media ? media.cloneNode(true) : '');
+        modal.dispatchEvent(new CustomEvent('case:open', { detail: { id } }));
         modal.showModal();
         $('.modal-close', modal).focus();
     };
