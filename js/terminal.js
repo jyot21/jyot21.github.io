@@ -136,6 +136,23 @@
                 lines.forEach(([lvl, src, msg], i) => setTimeout(() => line(muted(`${now()} `), accent(lvl), muted(`[${src}] `), msg), i * 260));
             },
         },
+        adr: {
+            about: 'decision records · adr [case]',
+            run: (args) => {
+                const id = (args[0] || '').toLowerCase();
+                const withAdr = [...document.querySelectorAll('template[id^="case-"]')].filter((t) => t.content.querySelector('.adr-item'));
+                if (!id) {
+                    withAdr.forEach((t) => {
+                        line(accent(t.id.replace('case-', '')));
+                        t.content.querySelectorAll('.adr-item h4').forEach((h, i) => line(muted(`  ADR-${String(i + 1).padStart(2, '0')}  `), h.textContent));
+                    });
+                    line(muted('adr <case> opens that case on its decisions tab.'));
+                    return;
+                }
+                if (!withAdr.some((t) => t.id === `case-${id}`)) return line(`adr: ${id}: no decision records. Try `, accent('adr'), '.');
+                jump('projects', () => window.openCase?.(id, 'adr'));
+            },
+        },
         chaos: {
             about: 'kill a broker, watch leader election',
             run: (args) => {
