@@ -727,7 +727,7 @@ match: 3 drivers · either direction
                     </div>
                 </div>
                 <div class="column right reveal">
-                    <form class="contact-form" id="contact-form" action="https://formsubmit.co/ajax/jyotmmaheshwari@gmail.com" method="POST">
+                    <form class="contact-form" id="contact-form" action="https://formsubmit.co/ajax/jyotmmaheshwari@gmail.com" method="POST" enctype="multipart/form-data">
                         <div class="form-bar"><span class="method">POST</span><span>/contact</span><span class="proto">HTTP/1.1</span></div>
                         <div class="fields">
                             <label class="field"><span>name</span><input type="text" name="Name" placeholder="Your name" required autocomplete="name"></label>
@@ -735,6 +735,10 @@ match: 3 drivers · either direction
                         </div>
                         <label class="field"><span>subject</span><input type="text" name="Subject" placeholder="What's it about?"></label>
                         <label class="field textarea"><span>body</span><textarea name="Message" rows="6" placeholder="Tell me a bit about it…" required minlength="10"></textarea></label>
+                        <label class="field file"><span>attachment <small>optional · max 10 MB</small></span>
+                            <input type="file" name="attachment" id="attachment" accept=".pdf,.doc,.docx,.txt,.md,image/png,image/jpeg" data-max="10485760">
+                            <span class="file-ui" aria-hidden="true"><i class="fas fa-paperclip"></i> <b class="file-name">attach a JD or brief…</b></span>
+                        </label>
                         <label class="hp" aria-hidden="true">Leave empty<input type="text" name="_honey" tabindex="-1" autocomplete="off"></label>
                         <div class="button-area">
                             <button class="btn send-msg" type="submit"><i class="fa-solid fa-paper-plane"></i> <span>Send message</span></button>
