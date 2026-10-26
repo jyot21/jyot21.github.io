@@ -31,6 +31,7 @@
     <script src="js/main.js" defer></script>
     <script src="js/terminal.js" defer></script>
     <script src="js/story.js" defer></script>
+    <script src="js/playground.js" defer></script>
 </head>
 
 <body>
@@ -678,6 +679,50 @@ match: 3 drivers · either direction
                     <h4><i class="fas fa-bolt"></i> Outcome</h4>
                     <p>Five overtime models from one engine, configured per client, with the amounts reaching payroll automatically instead of being reconciled by hand.</p>
                 </div>
+            </div>
+            <div class="ot-lab" data-ot-lab>
+                <div class="ot-bar"><span class="svc"><i class="fas fa-flask"></i> lab/overtime-engine · drag the punches, watch the stages run</span><span class="ot-note">simplified model · the real rules come from per-client config</span></div>
+                <div class="ot-controls">
+                    <label class="ot-field"><span>shift</span>
+                        <select name="shift">
+                            <option value="540-1080" selected>General 09–18</option>
+                            <option value="360-900">Early 06–15</option>
+                            <option value="840-1380">Late 14–23</option>
+                        </select>
+                    </label>
+                    <label class="ot-field"><span>client policy</span>
+                        <select name="policy">
+                            <option value="shift" selected>Shift-bound</option>
+                            <option value="threshold">Daily threshold</option>
+                        </select>
+                    </label>
+                    <label class="ot-field"><span>day type</span>
+                        <select name="day">
+                            <option value="1.5" selected>Weekday · 1.5×</option>
+                            <option value="2">Weekly off · 2×</option>
+                            <option value="2.5">Holiday · 2.5×</option>
+                        </select>
+                    </label>
+                    <label class="ot-field"><span>planned OT</span>
+                        <select name="planned">
+                            <option value="none">No approval needed</option>
+                            <option value="1">Approved · 1h</option>
+                            <option value="2" selected>Approved · 2h</option>
+                            <option value="3">Approved · 3h</option>
+                            <option value="4">Approved · 4h</option>
+                        </select>
+                    </label>
+                    <label class="ot-field ot-range"><span>punch in <b data-out="in">08:15</b></span><input type="range" name="in" min="-240" max="120" step="15" value="-45" aria-label="Punch-in time"></label>
+                    <label class="ot-field ot-range"><span>punch out <b data-out="out">19:30</b></span><input type="range" name="out" min="-120" max="360" step="15" value="90" aria-label="Punch-out time"></label>
+                </div>
+                <ol class="ot-pipe" aria-label="Pipeline stages">
+                    <li data-stage="pre"><span class="st-name">pre-shift OT</span><b class="st-val">–</b><span class="st-note"></span></li>
+                    <li data-stage="post"><span class="st-name">post-shift OT</span><b class="st-val">–</b><span class="st-note"></span></li>
+                    <li data-stage="normal"><span class="st-name">normal OT</span><b class="st-val">–</b><span class="st-note"></span></li>
+                    <li data-stage="diff"><span class="st-name">differential</span><b class="st-val">–</b><span class="st-note"></span></li>
+                    <li data-stage="planned"><span class="st-name">planned OT</span><b class="st-val">–</b><span class="st-note"></span></li>
+                </ol>
+                <p class="ot-result" aria-live="polite"><span class="k">→</span> <span>payroll.process(<b data-out="amount">–</b>)</span> <span class="ok">✔</span><span class="ot-calc" data-out="calc"></span></p>
             </div>
             <div class="tags"><span>Java</span><span>Pipeline pattern</span><span>Spring Boot</span><span>Payroll integration</span></div>
         </template>
