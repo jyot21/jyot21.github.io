@@ -136,6 +136,15 @@
                 lines.forEach(([lvl, src, msg], i) => setTimeout(() => line(muted(`${now()} `), accent(lvl), muted(`[${src}] `), msg), i * 260));
             },
         },
+        chaos: {
+            about: 'kill a broker, watch leader election',
+            run: (args) => {
+                if (!window.killBroker) return line(muted('chaos: the stream is not running here (reduced motion or no canvas).'));
+                const n = parseInt((args[0] || '').replace(/^broker-?/, ''), 10);
+                line(accent('chaos'), ` taking ${Number.isInteger(n) ? `broker-${n}` : 'a random broker'} down… watch the hero.`);
+                jump('home', () => { if (window.killBroker(Number.isInteger(n) ? n : undefined) === false) console.info('chaos: cluster is already recovering'); });
+            },
+        },
         neofetch: {
             about: 'system info',
             run: () => {
