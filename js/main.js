@@ -225,8 +225,38 @@
     /* ---------- contact ---------- */
     const form = $('#contact-form');
     const status = $('#status');
+    const fileInput = $('#attachment', form);
+    const fileField = fileInput?.closest('.field');
+    const fileName = $('.file-name', fileField);
+    const fileEmpty = fileName?.textContent;
+    const maxBytes = Number(fileInput?.dataset.max) || 10 * 1024 * 1024;
+    const fmtSize = (n) => n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`;
+    const showFile = () => {
+        const f = fileInput.files[0];
+        fileField.classList.toggle('has-file', !!f);
+        fileName.textContent = f ? `${f.name} · ${fmtSize(f.size)}` : fileEmpty;
+    };
+    fileInput?.addEventListener('change', () => {
+        const f = fileInput.files[0];
+        if (f && f.size > maxBytes) {
+            fileInput.value = '';
+            status.className = 'err';
+            status.textContent = `413 · ${f.name} is ${fmtSize(f.size)}; the limit is 10 MB.`;
+        } else if (status.className === 'err') {
+            status.className = '';
+            status.textContent = '';
+        }
+        showFile();
+    });
+    form?.addEventListener('reset', () => setTimeout(showFile));
     form?.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const f = fileInput?.files[0];
+        if (f && f.size > maxBytes) {
+            status.className = 'err';
+            status.textContent = `413 · attachment over 10 MB. Pick a smaller file.`;
+            return;
+        }
         const btn = $('.send-msg', form);
         btn.disabled = true;
         status.className = '';

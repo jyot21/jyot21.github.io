@@ -289,6 +289,16 @@ dialog::backdrop { background: rgba(5, 8, 14, .75); backdrop-filter: blur(6px); 
 .field input, .field textarea { width: 100%; padding: 11px 13px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; font-size: 14.5px; transition: border-color .3s, box-shadow .3s; }
 .field textarea { resize: vertical; }
 .field input:focus, .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.field span small { font-size: inherit; color: var(--muted); margin-left: 6px; }
+.field.file { position: relative; cursor: pointer; }
+.field.file input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+.file-ui { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 13px; border-radius: 8px; border: 1px dashed var(--border); background: var(--bg); font-family: var(--mono); font-size: 13px; color: var(--muted); transition: border-color .3s, box-shadow .3s; }
+.file-ui i { color: var(--signal); }
+.file-ui b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.field.file:hover .file-ui { border-color: var(--dim); }
+.field.file:focus-within .file-ui { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.field.file.has-file .file-ui { border-style: solid; color: var(--text); }
+.field.file.has-file .file-ui i { color: var(--ok); }
 .hp { position: absolute; left: -9999px; }
 .button-area { display: flex; align-items: center; gap: 16px; padding: 4px 16px 18px; flex-wrap: wrap; }
 #status { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin: 0; }

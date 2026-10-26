@@ -38,7 +38,7 @@ Search the files for these and fix each one:
 
 - GitHub links point at `jyot21` (og:url, the three GitHub links, the MCP and RideSharing case-study links). Change them if you publish under a different account.
 - `TODO` comments in `index.html` — places where only you know the detail: migration strategy, attendance partitioning and late-event handling, lock expiry strategy, MCP guardrails, the story chapters, and the "Present" end date on the Senior role.
-- The contact form posts to **formsubmit.co** using `jyotmmaheshwari@gmail.com`. The first submission triggers a one-time activation email to that address; click the link in it, after which messages arrive normally.
+- The contact form posts to **formsubmit.co** using `jyotmmaheshwari@gmail.com`. The first submission triggers a one-time activation email to that address; click the link in it, after which messages arrive normally. The optional attachment field (pdf, doc, txt, md, png, jpg; 10 MB cap enforced client-side) arrives as an email attachment.
 - `resume/Jyot_Maheshwari_Resume.pdf` — replace when the resume changes, and update the "Last updated" text in the About section.
 
 ## Updating content
